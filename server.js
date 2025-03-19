@@ -3,9 +3,10 @@ const app = express();
 const path = require('path');
 
 const admin = require('firebase-admin');
-
+// Convert the environment variable back to a JSON object
+const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
 // Firebase Init
-const serviceAccount = require('./firebaseKey.json');
+// const serviceAccount = require('./firebaseKey.json');
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: "https://aekads-88e11-default-rtdb.firebaseio.com/"
