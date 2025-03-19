@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Live Cricket Match</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 8px;
+    }
+
+    h1, h2 {
+      text-align: center;
+    }
+
+    .status {
+      text-align: center;
+      font-size: 18px;
+      margin-bottom: 20px;
+      color: #555;
+    }
+
+    .scores {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+    }
+
+    .team-score {
+      background: #eee;
+      padding: 10px 20px;
+      border-radius: 8px;
+      text-align: center;
+      flex: 1;
+      margin: 0 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #333;
+      color: #fff;
+    }
+
+    @media (max-width: 600px) {
+      .scores {
+        flex-direction: column;
+      }
+
+      .team-score {
+        margin-bottom: 10px;
+      }
+
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+
+      th {
+        text-align: left;
+      }
+
+      td {
+        text-align: left;
+        border: none;
+        position: relative;
+        padding-left: 50%;
+      }
+
+      td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0;
+        width: 50%;
+        padding-left: 10px;
+        font-weight: bold;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1 id="matchTitle">Loading...</h1>
+    <div class="status" id="matchStatus">Please wait...</div>
+
+    <div class="scores">
+      <div class="team-score" id="team1Score">-</div>
+      <div class="team-score" id="team2Score">-</div>
+    </div>
+
+    <h2>Batters</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Runs</th>
+          <th>Balls</th>
+          <th>4s</th>
+          <th>6s</th>
+          <th>SR</th>
+        </tr>
+      </thead>
+      <tbody id="battersTable">
+        <tr><td colspan="6">No data</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Bowlers</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>O</th>
+          <th>M</th>
+          <th>R</th>
+          <th>W</th>
+          <th>ECO</th>
+        </tr>
+      </thead>
+      <tbody id="bowlersTable">
+        <tr><td colspan="6">No data</td></tr>
+      </tbody>
+    </table>
+
+    <div class="status">Last Updated: <span id="lastUpdated">-</span></div>
+  </div>
+
+  <script>
+    async function fetchData() {
+      try {
+        const response = await fetch('/api/live-match'); // You can change this endpoint
+        const data = await response.json();
+
+        document.getElementById('matchTitle').innerText = data.matchTitle || 'Match Title';
+        document.getElementById('matchStatus').innerText = data.matchStatus || 'Status';
+
+        const team1 = data.currentScore[0] || { team: '-', score: '-' };
+        const team2 = data.currentScore[1] || { team: '-', score: '-' };
+
+        document.getElementById('team1Score').innerHTML = `<strong>${team1.team}</strong><br>${team1.score}`;
+        document.getElementById('team2Score').innerHTML = `<strong>${team2.team}</strong><br>${team2.score}`;
+
+        const battersTable = document.getElementById('battersTable');
+        battersTable.innerHTML = '';
+        if (data.batters && data.batters.length > 0) {
+          data.batters.forEach(batter => {
+            battersTable.innerHTML += `
+              <tr>
+                <td>${batter.isStriker ? batter.name + ' *' : batter.name}</td>
+                <td>${batter.runs}</td>
+                <td>${batter.balls}</td>
+                <td>${batter.fours}</td>
+                <td>${batter.sixes}</td>
+                <td>${batter.strikeRate}</td>
+              </tr>
+            `;
+          });
+        } else {
+          battersTable.innerHTML = '<tr><td colspan="6">No data</td></tr>';
+        }
+
+        const bowlersTable = document.getElementById('bowlersTable');
+        bowlersTable.innerHTML = '';
+        if (data.bowlers && data.bowlers.length > 0) {
+          data.bowlers.forEach(bowler => {
+            bowlersTable.innerHTML += `
+              <tr>
+                <td>${bowler.name}</td>
+                <td>${bowler.overs}</td>
+                <td>${bowler.maidens}</td>
+                <td>${bowler.runs}</td>
+                <td>${bowler.wickets}</td>
+                <td>${bowler.economy}</td>
+              </tr>
+            `;
+          });
+        } else {
+          bowlersTable.innerHTML = '<tr><td colspan="6">No data</td></tr>';
+        }
+
+        document.getElementById('lastUpdated').innerText = new Date(data.lastUpdated).toLocaleString();
+      } catch (error) {
+        console.error('Failed to fetch live data', error);
+      }
+    }
+
+    fetchData();
+    setInterval(fetchData, 10000); // Refresh every 10 seconds
+  </script>
+
+</body>
+</html>
